@@ -1,7 +1,9 @@
 package com.example.ballgame
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.view.WindowManager
 import android.view.animation.AlphaAnimation
@@ -36,10 +38,14 @@ class MainActivity : AppCompatActivity() {
     var sunY by Delegates.notNull<Float>()
     var sunX by Delegates.notNull<Float>()
 
+    // スコアの初期値
+    var score = 0
+
     // タイマーインスタンス
     val timerTask = MakeTimerTask()
     val timer = Timer()
-    // フラグ初期値
+
+    // フラグの初期値
     var touch_flg = false
     var start_flg = false
 
@@ -90,6 +96,9 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.IO){
                         timer.schedule(timerTask, 0, 50)
                     }
+                    withContext(Dispatchers.Main){
+                        hitCheck()
+                    }
                 }
                 // 画面タップでゲーム開始
                 if( event?.action == MotionEvent.ACTION_DOWN ){
@@ -98,6 +107,8 @@ class MainActivity : AppCompatActivity() {
             }
             // ゲーム開始したら
             true -> {
+                hitCheck()
+
                 if( event?.action == MotionEvent.ACTION_DOWN ){
                     touch_flg = true // タップしたら上に
 
@@ -110,10 +121,26 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    // UIの変更はメインスレッドでしかできない  // TimerTaskクラスを継承したクラス内で run
+    // UI変更はメインスレッドでのみ可能
+    fun hitCheck(){
+        // 衝突してる状態は？種のXY座標の中に雨が入っていること
+        if( 0 <= rainX && rainX <= seedSize && seedY <= rainY && rainY <= seedY + seedSize ){
+            rainX = -1.0f // 画面外（左）に出して画面右へ戻す
+
+            //TODO: scoreが50の時に双葉、100の時にタンポポ
+            //TODO: 太陽のしかけ
+            score += 10
+
+            binding.seed.setImageResource(R.drawable.hutaba)
+
+            binding.score.text = "Score : $score"
+        }
+    }
+
+    // Timerはワーカースレッドのみ実行可能 // UI変更はメインスレッドでのみ可能 // TimerTaskクラスを継承したクラス内で run
     inner class MakeTimerTask : TimerTask(){
         override fun run() {
-            // 種
+            // 種の移動
             when( touch_flg ){
                 true -> {
                     seedY -= 20.0f
