@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
 import kotlin.properties.Delegates
-
+//TODO:ヒット効果音、スタート画面、ゲームオーバークリア画面
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
 
@@ -127,17 +127,32 @@ class MainActivity : AppCompatActivity() {
         if( 0 <= rainX && rainX <= seedSize && seedY <= rainY && rainY <= seedY + seedSize ){
             rainX = -1.0f // 画面外（左）に出して画面右へ戻す
 
-            //TODO: scoreが50の時に双葉、100の時にタンポポ
-            //TODO: 太陽のしかけ
             score += 10
-
-            binding.seed.setImageResource(R.drawable.hutaba)
-
             binding.score.text = "Score : $score"
+
+            when(score){
+                50 -> {
+                    binding.seed.setImageResource(R.drawable.hutaba)
+                }
+                100 -> {
+                    binding.seed.setImageResource(R.drawable.tanpopo)
+                }
+                150 -> {
+                    binding.seed.setImageResource(R.drawable.smile_tanpopo)
+                }
+            }
+        }else if( 0 <= sunX && sunX <= seedSize && seedY <= sunY && sunY <= seedY + seedSize ){
+            sunX -= 1.0f // 画面外（左）に出して画面右へ戻す
+
+            score += 10
+            binding.score.text = "Score : $score"
+
+            binding.seed.setImageResource(R.drawable.smile_tanpopo)
         }
     }
 
     // Timerはワーカースレッドのみ実行可能 // UI変更はメインスレッドでのみ可能 // TimerTaskクラスを継承したクラス内で run
+    //TODO: ランダムに蜂と蝶がでてgame overとgame clearになる
     inner class MakeTimerTask : TimerTask(){
         override fun run() {
             // 種の移動
