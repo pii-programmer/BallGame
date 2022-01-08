@@ -18,50 +18,68 @@ import kotlin.properties.Delegates
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
 
-    // プリミティブ型はlateinit使えない。nullable || non-null by lazy{ 初期値をキャッシュに残す }。初期値をキャッシュに残すから初期値の変更ができない。
-    // FrameLayoutの高さ
+    // クラスのメンバにする
+    // プリミティブ型はlateinit使えない。nullable || non-null by lazy{ 初期値をキャッシュに残す }。初期値をキャッシュに残すから初期値の変更ができない。だからDelegates.notNull()
     var frameHeight by Delegates.notNull<Int>()
-    // FrameLayoutの横
     var frameWidth by Delegates.notNull<Int>()
-    // 種のサイズ
+
     var seedSize by Delegates.notNull<Int>()
-    // 種のY座標
     var seedY by Delegates.notNull<Float>()
-    // 雨のサイズ
+
     var rainSize by Delegates.notNull<Int>()
-    // 雨の座標
     var rainY by Delegates.notNull<Float>()
     var rainX by Delegates.notNull<Float>()
-    // 晴れのサイズ
+
     var sunSize by Delegates.notNull<Int>()
-    // 晴れの座標
     var sunY by Delegates.notNull<Float>()
     var sunX by Delegates.notNull<Float>()
+
+//    var beeSize by Delegates.notNull<Int>()
+//    var beeY by Delegates.notNull<Float>()
+//    var beeX by Delegates.notNull<Float>()
+//
+//    var butterflySize by Delegates.notNull<Int>()
+//    var butterflyY by Delegates.notNull<Float>()
+//    var butterflyX by Delegates.notNull<Float>()
 
     // スコアの初期値
     var score = 0
 
-    // タイマーインスタンス
-    val timerTask = MakeTimerTask()
-    val timer = Timer()
-
     // フラグの初期値
     var touch_flg = false
     var start_flg = false
+
+    // タイマーインスタンス
+    val timerTask = MakeTimerTask()
+//    val trickTimerTask = TrickTimerTask()
+    val timer = Timer()
+
+    // 効果音のインスタンス。初期化はcontextの生成が完了してるonCreateで
+    lateinit var soundPlayer:SoundPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 雨と晴れの初期位置
+        soundPlayer = SoundPlayer(this)
+
+        // 雨晴れ蜂蝶の初期位置
         binding.rain.apply{
             x = 900.0f
-            y = 1000.0f
+            y = 700.0f
         }
         binding.sun.apply{
             x = 900.0f
-            y = 700.0f
+            y = 1000.0f
+        }
+        binding.bee.apply {
+            x = 1200.0f
+            y = 500.0f
+        }
+        binding.butterfly.apply {
+            x = 1200.0f
+            y = 1200.0f
         }
 
         // スタート文字をフェードアウト
@@ -88,20 +106,28 @@ class MainActivity : AppCompatActivity() {
         sunY = binding.sun.y
         sunX = binding.sun.x
 
-        when( start_flg ){
+//        beeSize = binding.bee.height
+//        beeY = binding.sun.y
+//        beeX = binding.sun.x
+//
+//        butterflySize = binding.butterfly.height
+//        butterflyY = binding.sun.y
+//        butterflyX = binding.sun.x
+
+        when( start_flg ) {
             // ゲーム開始前
             false -> {
-                // timer実行
-                GlobalScope.launch{
-                    withContext(Dispatchers.IO){
-                        timer.schedule(timerTask, 0, 50)
+                GlobalScope.launch {
+                    withContext(Dispatchers.IO) {
+                        timer.schedule(timerTask, 0, 50)//待ち時間なし 50ミリ秒毎に実行
+//                        timer.schedule(trickTimerTask,0,50)
                     }
-                    withContext(Dispatchers.Main){
+                    withContext(Dispatchers.Main) {
                         hitCheck()
                     }
                 }
                 // 画面タップでゲーム開始
-                if( event?.action == MotionEvent.ACTION_DOWN ){
+                if (event?.action == MotionEvent.ACTION_DOWN) {
                     start_flg = true
                 }
             }
@@ -109,12 +135,11 @@ class MainActivity : AppCompatActivity() {
             true -> {
                 hitCheck()
 
-                if( event?.action == MotionEvent.ACTION_DOWN ){
+                if (event?.action == MotionEvent.ACTION_DOWN) {
                     touch_flg = true // タップしたら上に
 
-                } else if( event?.action == MotionEvent.ACTION_UP ){
+                } else if (event?.action == MotionEvent.ACTION_UP) {
                     touch_flg = false// 離したら下に
-
                 }
             }
         }
@@ -123,8 +148,10 @@ class MainActivity : AppCompatActivity() {
 
     // UI変更はメインスレッドでのみ可能
     fun hitCheck(){
-        // 衝突してる状態は？種のXY座標の中に雨が入っていること
+        // 衝突してる状態 = 種のXY座標の中に雨が入っていること
         if( 0 <= rainX && rainX <= seedSize && seedY <= rainY && rainY <= seedY + seedSize ){
+            soundPlayer.hitSoundPlay()
+
             rainX = -1.0f // 画面外（左）に出して画面右へ戻す
 
             score += 10
@@ -141,13 +168,23 @@ class MainActivity : AppCompatActivity() {
                     binding.seed.setImageResource(R.drawable.smile_tanpopo)
                 }
             }
+        // 晴れの場合は
         }else if( 0 <= sunX && sunX <= seedSize && seedY <= sunY && sunY <= seedY + seedSize ){
+            soundPlayer.hitSoundPlay()
+
             sunX -= 1.0f // 画面外（左）に出して画面右へ戻す
 
-            score += 10
+            score += 150
             binding.score.text = "Score : $score"
 
-            binding.seed.setImageResource(R.drawable.smile_tanpopo)
+            when(score){
+                150 -> {
+                    binding.seed.setImageResource(R.drawable.smile_tanpopo)
+                }
+                300 -> {
+                    binding.seed.setImageResource(R.drawable.tree)
+                }
+            }
         }
     }
 
@@ -168,7 +205,7 @@ class MainActivity : AppCompatActivity() {
             if( seedY < 0.0f ){
                 seedY = 0.0f
             }
-            // 種のY座標がFrameLayoutの外だったら現在のY座標を代入
+            // 種のY座標がFrameHeightの外だったら現在のY座標を代入
             if( seedY > frameHeight - seedSize ){
                 seedY = (frameHeight - seedSize).toFloat()
             }
@@ -195,4 +232,23 @@ class MainActivity : AppCompatActivity() {
             binding.sun.y = sunY
         }
     }
+//    inner class TrickTimerTask : TimerTask(){
+//        override fun run() {
+//            beeX -= 10.0f
+//            if( beeX < 0.0f ){
+//                beeX = frameWidth + 10.0f
+//                beeY = (Math.random() * (frameHeight - beeSize) + beeSize).toFloat()
+//            }
+//            binding.bee.x = beeX
+//            binding.bee.y = beeY
+//
+//            butterflyX -= 10.0f
+//            if( butterflyX < 0.0f ){
+//                butterflyX = frameWidth + 10.0f
+//                butterflyY = (Math.random() * (frameHeight - butterflySize) + butterflySize).toFloat()
+//            }
+//            binding.butterfly.x = butterflyX
+//            binding.butterfly.y = butterflyY
+//        }
+//    }
 }

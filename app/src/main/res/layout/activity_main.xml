@@ -49,6 +49,18 @@
             android:layout_height="40dp"
             android:src="@drawable/sun"/>
 
+        <ImageView
+            android:id="@+id/bee"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/bee"/>
+
+        <ImageView
+            android:id="@+id/butterfly"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/butterfly"/>
+
     </FrameLayout>
 
 </LinearLayout>
