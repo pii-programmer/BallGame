@@ -1,11 +1,9 @@
 package com.example.ballgame
 
-import android.annotation.SuppressLint
+import android.graphics.Point
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.MotionEvent
-import android.view.WindowManager
 import android.view.animation.AlphaAnimation
 import com.example.ballgame.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
@@ -13,18 +11,24 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
+import kotlin.math.roundToInt
 import kotlin.properties.Delegates
 //TODO:ヒット効果音、スタート画面、ゲームオーバークリア画面
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
 
-    // クラスのメンバにする
+/** メンバ変数にする（クラス内のメソッドから自由にアクセスできる）**/
     // プリミティブ型はlateinit使えない。nullable || non-null by lazy{ 初期値をキャッシュに残す }。初期値をキャッシュに残すから初期値の変更ができない。だからDelegates.notNull()
     var frameHeight by Delegates.notNull<Int>()
     var frameWidth by Delegates.notNull<Int>()
 
+    // 端末ごとのスクリーンサイズに応じてボールの速度を変えるため
+    var screenHeight by Delegates.notNull<Int>()
+    var screenWidth by Delegates.notNull<Int>()
+
     var seedSize by Delegates.notNull<Int>()
     var seedY by Delegates.notNull<Float>()
+    var seedSpeed by Delegates.notNull<Int>()
 
     var rainSize by Delegates.notNull<Int>()
     var rainY by Delegates.notNull<Float>()
@@ -57,10 +61,24 @@ class MainActivity : AppCompatActivity() {
     // 効果音のインスタンス。初期化はcontextの生成が完了してるonCreateで
     lateinit var soundPlayer:SoundPlayer
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // 端末ごとのスクリーンサイズを取得
+        val wm = windowManager
+        val display = wm.defaultDisplay
+        val size = Point()
+        display.getSize(size)
+
+        // 端末のxとyを代入して初期化
+        screenHeight = size.y
+        screenWidth = size.x
+
+        // roundメソッド = 四捨五入する
+        seedSpeed = (screenHeight / 60f).roundToInt()
 
         soundPlayer = SoundPlayer(this)
 
@@ -251,4 +269,8 @@ class MainActivity : AppCompatActivity() {
 //            binding.butterfly.y = butterflyY
 //        }
 //    }
+
+    override fun onBackPressed() {
+        // ナビゲーションバーの 戻る ボタンを押しても画面に留まるようにする。だから何も書かない。
+    }
 }
